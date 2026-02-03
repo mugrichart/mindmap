@@ -8,11 +8,11 @@
 ## 🛠 How It Works
 Mind map employs a graph of chats allowing the user to jump through chats:
 
-### 1. Contextual Analysis
+### 1. 
 
-### 2. Sentiment Mapping
+### 2. 
 
-### 3. Curation Engine
+### 3. 
 
 ## ✨ Features
 
