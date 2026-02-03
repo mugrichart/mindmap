@@ -42,15 +42,15 @@ MongoDB
 git clone https://github.com/mugrichart/mindmap.git
 cd mindmap
 2. Install dependencies
-cd backend
+cd server
 pnpm install
-cd ../frontend
+cd ../client
 pnpm install
 3. Set up Environment Variables
 Create a .env file in the root directory
 4. Run the application
-frontend: pnpm run dev
-backend: pnpm start:dev
+client: pnpm run dev
+server: pnpm start:dev
 
 ## Roadmap
 - 
