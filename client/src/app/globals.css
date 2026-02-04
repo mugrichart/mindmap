@@ -57,3 +57,41 @@ h1, h2, h3, h4, h5, h6 {
   background-image: radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
   background-size: 40px 40px;
 }
+
+@keyframes sidebar-stretch {
+  0% { width: 4rem; opacity: 0; }
+  60% { width: 32rem; opacity: 1; }
+  100% { width: 18rem; }
+}
+
+@keyframes node-fade-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-sidebar {
+  animation: sidebar-stretch 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-node {
+  animation: node-fade-in 0.5s ease-out forwards;
+}
+
+.sidebar-glass {
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chat-bubble-user {
+  background: var(--primary);
+  color: white;
+  border-radius: 1.5rem 1.5rem 0.25rem 1.5rem;
+}
+
+.chat-bubble-ai {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--heading);
+  border-radius: 1.5rem 1.5rem 1.5rem 0.25rem;
+}
