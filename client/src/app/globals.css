@@ -68,15 +68,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .chat-bubble-user {
-  background: var(--primary);
-  color: #000000;
-  border-radius: 0.75rem 0.75rem 0.25rem 0.75rem;
+  background: var(--secondary);
+  color: var(--heading);
+  border-radius: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  max-width: 85%;
   font-weight: 500;
+  line-height: 1.5;
 }
 
 .chat-bubble-ai {
   background: transparent;
-  border: 1px solid var(--secondary);
   color: var(--heading);
-  border-radius: 0.75rem 0.75rem 0.75rem 0.25rem;
+  width: 100%;
+  line-height: 1.6;
 }

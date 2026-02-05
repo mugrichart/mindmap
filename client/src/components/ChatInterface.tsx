@@ -79,25 +79,20 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
             </header>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-8 max-w-4xl mx-auto w-full">
-                <div className="flex gap-4 items-start">
-                    <div className="h-8 w-8 rounded-full bg-secondary/50 flex items-center justify-center text-heading border border-secondary shrink-0">
-                        <User size={16} />
+            <div className="flex-1 overflow-y-auto px-4 py-8">
+                <div className="max-w-3xl mx-auto space-y-12">
+                    {/* User Message */}
+                    <div className="flex flex-col items-end">
+                        <div className="chat-bubble-user">
+                            Explain how backpropagation works in deep neural networks.
+                        </div>
                     </div>
-                    <div className="chat-bubble-user p-4 text-sm leading-relaxed shadow-lg">
-                        Explain how backpropagation works in deep neural networks.
-                    </div>
-                </div>
 
-                <div className="flex gap-4 items-start">
-                    <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-black shrink-0 font-bold text-xs">
-                        M
-                    </div>
-                    <div className="chat-bubble-ai p-5 text-sm leading-relaxed shadow-xl max-w-[85%] border border-secondary">
-                        <p className="mb-4 font-bold">Concept Anchor: Gradient Descent</p>
-                        <p>Backpropagation is essentially the efficient application of the chain rule from calculus to compute gradients in a neural network. It flows backward from the error at the output layer through all the connections to the inputs.</p>
-                        <div className="mt-4 p-3 rounded-xl bg-secondary/30 border border-secondary flex items-center gap-3 italic text-xs text-heading font-medium">
-                            <span>💡 Relation Found: "Linear Regression - Gradient Descent"</span>
+                    {/* AI Message */}
+                    <div className="flex flex-col items-start">
+                        <div className="chat-bubble-ai px-1 text-sm md:text-base leading-relaxed">
+                            <p className="mb-4 font-bold text-lg text-heading">Concept Anchor: Gradient Descent</p>
+                            <p className="text-foreground/80">Backpropagation is essentially the efficient application of the chain rule from calculus to compute gradients in a neural network. It flows backward from the error at the output layer through all the connections to the inputs.</p>
                         </div>
                     </div>
                 </div>
@@ -108,7 +103,7 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
                 <div className="max-w-4xl mx-auto relative group">
                     <div className="relative flex items-end gap-2 p-2 rounded-2xl bg-card border border-secondary shadow-sm group-focus-within:border-foreground/50 transition-all duration-300">
                         <textarea
-                            placeholder="Ask anything... Topics will auto-link."
+                            placeholder="Ask anything..."
                             rows={1}
                             className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none text-sm py-4 px-6 text-heading resize-none placeholder:text-foreground/30 max-h-48 overflow-y-auto custom-scrollbar"
                             onInput={(e) => {
