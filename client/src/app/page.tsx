@@ -3,18 +3,16 @@ export default function Home() {
     <div className="relative min-h-screen bg-background font-sans text-foreground grid-bg">
       {/* Background Glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-[20%] -left-[10%] h-[50%] w-[50%] rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute top-[40%] -right-[10%] h-[40%] w-[40%] rounded-full bg-secondary/10 blur-[100px]" />
-        <div className="absolute -top-[20%] -left-[10%] h-[50%] w-[50%] rounded-full bg-neutral-700/20 blur-[120px]" />
-        <div className="absolute top-[40%] -right-[10%] h-[40%] w-[40%] rounded-full bg-neutral-800/20 blur-[100px]" />
+        <div className="absolute -top-[20%] -left-[10%] h-[50%] w-[50%] rounded-full bg-white/5 blur-[120px]" />
+        <div className="absolute top-[40%] -right-[10%] h-[40%] w-[40%] rounded-full bg-white/5 blur-[100px]" />
       </div>
 
       <main className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-6 pt-24 pb-32 sm:px-12 lg:pt-32">
         {/* Navigation */}
         <nav className="fixed top-6 left-1/2 flex w-[90%] max-w-4xl -translate-x-1/2 items-center justify-between rounded-full bg-card/60 px-6 py-3 backdrop-blur-xl border border-white/5 shadow-2xl">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-              <span className="text-white font-bold text-lg">M</span>
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+              <span className="text-black font-bold text-lg">M</span>
             </div>
             <span className="text-xl font-bold tracking-tight text-heading">Mind Map</span>
           </div>
@@ -27,7 +25,7 @@ export default function Home() {
             <button className="hidden text-sm font-semibold text-foreground/80 hover:text-heading transition-colors sm:block">
               Sign In
             </button>
-            <button className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition-all hover:scale-105 active:scale-95">
+            <button className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-black transition-all hover:scale-105 active:scale-95">
               Get Started
             </button>
           </div>
@@ -44,7 +42,7 @@ export default function Home() {
           </div>
 
           <h1 className="mt-8 max-w-4xl text-5xl font-extrabold leading-[1.1] text-heading sm:text-7xl">
-            Where your thoughts <br /> find their <span className="text-primary italic">rightful place</span>.
+            Where your thoughts <br /> find their <span className="opacity-40 italic">rightful place</span>.
           </h1>
 
           <p className="mt-8 max-w-2xl text-lg leading-relaxed text-foreground/80 sm:text-xl">
@@ -53,7 +51,7 @@ export default function Home() {
           </p>
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row">
-            <button className="group relative flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-white transition-all hover:scale-105 active:scale-95">
+            <button className="group relative flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-black transition-all hover:scale-105 active:scale-95">
               Start Mapping
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
             </button>
@@ -163,7 +161,7 @@ export default function Home() {
             Join the private beta. Experience the future of intellectual structure.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4">
-            <button className="rounded-full bg-white px-10 py-5 text-xl font-bold text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+            <button className="rounded-full bg-primary px-10 py-5 text-xl font-bold text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
               Get Started for Free
             </button>
             <p className="text-xs text-foreground/40 italic">No credit card required. Invite-only access.</p>

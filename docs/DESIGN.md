@@ -8,14 +8,15 @@ Mind Map is a spatial intelligence layer for AI interaction. The design should f
 ## 🌑 Visual Style: "Monochrome Intelligence"
 - **Aesthetic**: A disciplined, near-monochromatic dark mode using neutral greys and deep blacks.
 - **Key Concepts**: **Clarity through Contrast**. We use pure white and high-contrast greys to denote hierarchy rather than color.
+- **Key Concepts**: **Clarity through Contrast**. We use pure white and high-contrast greys to denote hierarchy, creating atmospheric depth without using flat blacks.
 - **Feedback**: Minimalist and precise. No glows, no gradients, no "purple problem".
 
 ## 🎨 Color Palette
 
 | Color | Hex | Role |
 | :--- | :--- | :--- |
-| **Foundation** | `#09090B` | Deep Page Background |
-| **Surface** | `#18181B` | Sidebars, Cards, and UI Layers |
+| **Foundation** | `#0D0D0F` | Deep Chat Background (Ink Black) |
+| **Surface** | `#141416` | Sidebar and UI Layers (Subtle Contrast) |
 | **High Contrast** | `#FAFAFA` | Primary UI Actions / Headings |
 | **Neutral Slate** | `#71717A` | Secondary Text / Muted UI |
 | **Deep Zinc** | `#27272A` | Borders / Subtle Overlays |
@@ -26,6 +27,11 @@ Mind Map is a spatial intelligence layer for AI interaction. The design should f
 - **Mono**: `Geist Mono` - for topic paths and technical metadata.
 
 ## 🧩 Components
+### Topics Map & Genealogy
+- **Genealogy Trace**: A secondary navigation layer at the bottom of the sidebar. Muted opacity (`text-foreground/30`) with interactive breadcrumbs.
+- **Topics Map**: A spatial visualization layer. High-contrast highlighting for the 'family line' (focus) and extreme dimming (`opacity-20`) for the peripheral knowledge branches.
+- **Visual Hierarchy**: The Chat Interface is a few degrees darker than the Sidebar, creating atmospheric depth without using flat blacks.
+
 ### Buttons
 - **Primary**: Solid White with black text. Instant, high-contrast recognition.
 - **Secondary**: Deep Zinc surface with subtle border.
@@ -38,5 +44,5 @@ Mind Map is a spatial intelligence layer for AI interaction. The design should f
 
 ## ✨ Interactions
 - **Active State**: Inverting contrast (e.g., active node becomes High Contrast with dark text).
-- **Transitions**: 150ms-200ms duration. Snap-to-target for a feel of high-performance efficiency.
+- **Spatial Mapping**: Transitions use 300ms-500ms durations for the Map overlay to give a sense of shifting intelligence layers.
 - **Focus**: Clean 1px border shift to High Contrast white (no glow).

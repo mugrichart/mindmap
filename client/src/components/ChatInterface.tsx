@@ -18,7 +18,7 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     return (
-        <div className="flex-1 flex flex-col h-screen relative bg-background/50">
+        <div className="flex-1 flex flex-col h-screen relative bg-background">
             {/* Header */}
             <header className="h-16 flex items-center px-4 justify-between backdrop-blur-md z-30">
                 <div className="flex items-center gap-2">
