@@ -1,76 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Folder, MessageSquare, Plus } from "lucide-react";
+import { ChevronRight, Folder, MessageSquare, Plus, GitGraph } from "lucide-react";
 
-interface Node {
-    id: string;
-    label: string;
-    type: "folder" | "chat";
-    children?: Node[];
-}
-
-const MOCK_DATA: Node[] = [
-    {
-        id: "1",
-        label: "Artificial Intelligence",
-        type: "folder",
-        children: [
-            {
-                id: "1-1",
-                label: "Machine Learning",
-                type: "folder",
-                children: [
-                    { id: "1-1-1", label: "Supervised Learning", type: "chat" },
-                    { id: "1-1-2", label: "Unsupervised Learning", type: "chat" },
-                    {
-                        id: "1-1-3",
-                        label: "Neural Networks",
-                        type: "folder",
-                        children: [
-                            { id: "1-1-3-1", label: "Backpropagation", type: "chat" },
-                            { id: "1-1-3-2", label: "Transformers", type: "chat" }
-                        ]
-                    }
-                ]
-            },
-            { id: "1-2", label: "Natural Language Processing", type: "chat" }
-        ]
-    },
-    {
-        id: "2",
-        label: "Economics",
-        type: "folder",
-        children: [
-            {
-                id: "2-1",
-                label: "Microeconomics",
-                type: "folder",
-                children: [
-                    { id: "2-1-1", label: "Supply and Demand", type: "chat" },
-                    { id: "2-1-2", label: "Consumer Theory", type: "chat" }
-                ]
-            },
-            { id: "2-2", label: "Macroeconomics", type: "chat" }
-        ]
-    }
-];
+import { Node, MOCK_DATA } from "@/lib/data";
 
 interface SidebarProps {
     isOpen: boolean;
+    navigationStack: Node[];
+    onFolderClick: (node: Node) => void;
+    onBack: () => void;
+    onSetStack: (stack: Node[]) => void;
+    onShowMap: () => void;
 }
 
-export default function Sidebar({ isOpen }: SidebarProps) {
-    const [navigationStack, setNavigationStack] = useState<Node[]>([]);
-
+export default function Sidebar({
+    isOpen,
+    navigationStack,
+    onFolderClick,
+    onBack,
+    onSetStack,
+    onShowMap
+}: SidebarProps) {
     const handleFolderClick = (node: Node) => {
         if (node.type === "folder") {
-            setNavigationStack([...navigationStack, node]);
+            onFolderClick(node);
         }
     };
 
     const goBack = () => {
-        setNavigationStack(navigationStack.slice(0, -1));
+        onBack();
     };
 
     const currentLevel = navigationStack.length > 0
@@ -88,6 +47,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
         >
 
             <div className="flex-1 overflow-y-auto px-3 pt-6 space-y-1">
+
                 {/* Active Topic Indicator - Only show if in a sub-level */}
                 {navigationStack.length > 0 && (
                     <div className="px-3 py-4 mb-2 rounded-xl bg-secondary/20 border border-secondary transition-colors whitespace-nowrap">
@@ -141,6 +101,41 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                             {navigationStack.length === 0 ? "New Topic" : "New Subtopic"}
                         </span>
                     </button>
+
+                    <div className="mt-8 pt-6 border-t border-white/5 space-y-3">
+                        <div className="px-3">
+                            <p className="text-[10px] font-bold text-foreground/20 uppercase tracking-[0.2em]">Genealogy Trace</p>
+                            {navigationStack.length > 0 ? (
+                                <div className="flex items-center gap-1 mt-2 flex-wrap max-w-full overflow-hidden">
+                                    {navigationStack.map((node, i) => (
+                                        <div key={node.id} className="flex items-center gap-1">
+                                            <span
+                                                className="text-[10px] text-foreground/30 hover:text-foreground/60 cursor-pointer transition-colors max-w-[80px] truncate"
+                                                onClick={() => onSetStack(navigationStack.slice(0, i + 1))}
+                                            >
+                                                {node.label}
+                                            </span>
+                                            {i < navigationStack.length - 1 && <ChevronRight size={10} className="text-foreground/20" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-[10px] text-foreground/10 italic mt-2">At root level</p>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={onShowMap}
+                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group border border-dashed border-white/5 whitespace-nowrap"
+                        >
+                            <div className="p-2 rounded-lg bg-white/5 text-foreground/40 group-hover:text-primary transition-colors">
+                                <GitGraph size={16} />
+                            </div>
+                            <span className="text-sm font-medium text-foreground/40 group-hover:text-heading transition-colors">
+                                Explore Topics Map
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
