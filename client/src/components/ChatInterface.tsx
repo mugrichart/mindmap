@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send, User, ChevronDown, Check } from "lucide-react";
+import { User, ChevronDown, Check, CornerDownLeft } from "lucide-react";
 
 const MODELS = [
     { id: "gpt-4o", name: "GPT-4o", provider: "OpenAI" },
@@ -92,24 +92,20 @@ export default function ChatInterface() {
             {/* Input Area */}
             <div className="p-8 pt-0">
                 <div className="max-w-4xl mx-auto relative group">
-                    <div className="absolute inset-0 bg-primary/0 blur-2xl group-focus-within:bg-primary/10 transition-all duration-500 rounded-[2rem]"></div>
-                    <div className="relative flex items-end gap-2 p-2 rounded-[2rem] bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl group-focus-within:border-primary/50 group-focus-within:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all duration-300">
+                    <div className="relative flex items-end gap-2 p-2 rounded-[2rem] bg-card/60 backdrop-blur-2xl border border-white/10 shadow-sm group-focus-within:border-primary/50 transition-all duration-300">
                         <textarea
                             placeholder="Ask anything... Topics will auto-link."
                             rows={1}
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-4 px-6 text-heading resize-none placeholder:text-foreground/30 max-h-48 overflow-y-auto custom-scrollbar"
+                            className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none text-sm py-4 px-6 text-heading resize-none placeholder:text-foreground/30 max-h-48 overflow-y-auto custom-scrollbar"
                             onInput={(e) => {
                                 const target = e.target as HTMLTextAreaElement;
                                 target.style.height = 'auto';
                                 target.style.height = `${Math.min(target.scrollHeight, 192)}px`;
                             }}
                         />
-                        <button className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white hover:scale-105 hover:glow-blue active:scale-95 transition-all shadow-lg mb-0.5 mr-0.5 shrink-0">
-                            <Send size={18} />
+                        <button className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all mb-0.5 mr-0.5 shrink-0">
+                            <CornerDownLeft size={18} />
                         </button>
-                    </div>
-                    <div className="flex justify-center mt-4">
-                        <p className="text-[10px] text-foreground/20 uppercase tracking-[0.3em] font-bold">Topic Mapping Interface</p>
                     </div>
                 </div>
             </div>
