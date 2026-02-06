@@ -41,11 +41,16 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({
+                top: scrollRef.current.scrollHeight,
+                behavior: "smooth"
+            });
+        }
     };
 
     useEffect(() => {
@@ -195,7 +200,10 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
             </header>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-8 custom-scrollbar">
+            <div
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto px-4 py-8 no-scrollbar"
+            >
                 <div className="max-w-3xl mx-auto space-y-12">
                     {messages.map((msg) => (
                         <div
@@ -232,7 +240,6 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
                             </div>
                         </div>
                     ))}
-                    <div ref={messagesEndRef} />
                 </div>
             </div>
 
@@ -246,7 +253,7 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder="Ask anything..."
                             rows={1}
-                            className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none text-sm py-4 px-6 text-heading resize-none placeholder:text-foreground/30 max-h-48 overflow-y-auto custom-scrollbar"
+                            className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none text-sm py-4 px-6 text-heading resize-none placeholder:text-foreground/30 max-h-48 overflow-y-auto no-scrollbar"
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
