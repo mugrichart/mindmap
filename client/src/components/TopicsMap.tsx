@@ -1,6 +1,4 @@
-"use client";
-
-import React from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Folder, ChevronRight, MessageSquare } from "lucide-react";
 import { Node } from "@/lib/data";
 
@@ -11,16 +9,96 @@ interface TopicsMapProps {
 }
 
 export default function TopicsMap({ levels, currentStack, onNavigate }: TopicsMapProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [connections, setConnections] = useState<any[]>([]);
+
+    // Function to calculate parent-child connections
+    const updateConnections = () => {
+        if (!containerRef.current) return;
+        const newConnections: any[] = [];
+        const containerRect = containerRef.current.getBoundingClientRect();
+
+        // Only draw connections between nodes that have been visited (are in the currentStack)
+        for (let i = 0; i < currentStack.length - 1; i++) {
+            const parent = currentStack[i];
+            const child = currentStack[i + 1];
+
+            const parentEl = document.getElementById(`node-${parent.id}`);
+            const childEl = document.getElementById(`node-${child.id}`);
+
+            if (parentEl && childEl) {
+                const pRect = parentEl.getBoundingClientRect();
+                const cRect = childEl.getBoundingClientRect();
+
+                // String leaves from the EXACT right border of the parent
+                const startX = pRect.right - containerRect.left;
+                const startY = pRect.top - containerRect.top + pRect.height / 2;
+
+                // String touches the EXACT left border of the child
+                const endX = cRect.left - containerRect.left;
+                const endY = cRect.top - containerRect.top + cRect.height / 2;
+
+                newConnections.push({ startX, startY, endX, endY });
+            }
+        }
+        setConnections(newConnections);
+    };
+
+    // Update on changes, resize, and horizontal scroll
+    useLayoutEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const sync = () => requestAnimationFrame(updateConnections);
+
+        updateConnections();
+        window.addEventListener('resize', sync);
+        container.addEventListener('scroll', sync);
+
+        return () => {
+            window.removeEventListener('resize', sync);
+            container.removeEventListener('scroll', sync);
+        };
+    }, [levels, currentStack]);
+
+    // Handle internal scrolls of level containers
+    const handleScroll = () => {
+        requestAnimationFrame(updateConnections);
+    };
+
     return (
-        <div className="flex h-full overflow-x-auto no-scrollbar p-10 min-w-full">
+        <div ref={containerRef} className="relative flex h-full overflow-x-auto no-scrollbar p-10 min-w-full">
+            {/* SVG Layer for Connections */}
+            <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full overflow-visible">
+                <defs>
+                    <linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.1" />
+                    </linearGradient>
+                </defs>
+                {connections.map((conn, i) => (
+                    <g key={i}>
+                        <path
+                            d={`M ${conn.startX} ${conn.startY} C ${conn.startX + 60} ${conn.startY}, ${conn.endX - 60} ${conn.endY}, ${conn.endX} ${conn.endY}`}
+                            stroke="url(#line-gradient)"
+                            strokeWidth="1.8"
+                            fill="none"
+                            className="opacity-80"
+                        />
+                        {/* Knots */}
+                        <circle cx={conn.startX} cy={conn.startY} r="3" className="fill-primary" />
+                        <circle cx={conn.endX} cy={conn.endY} r="3" className="fill-primary" />
+                    </g>
+                ))}
+            </svg>
+
             {levels.map((nodes, levelIndex) => {
-                // The node in the current level that is part of the active path
                 const selectedInThisLevel = currentStack[levelIndex];
 
                 return (
                     <div
                         key={levelIndex}
-                        className="flex flex-col gap-3 min-w-[280px] max-w-[320px] pr-8 border-r border-white/5 last:border-none"
+                        className="flex flex-col gap-3 min-w-[320px] max-w-[360px] px-8 border-r border-white/5 last:border-none z-10"
                     >
                         <div className="flex items-center justify-between px-2 mb-2">
                             <span className="text-[10px] font-bold text-foreground/20 uppercase tracking-[0.2em]">
@@ -29,13 +107,12 @@ export default function TopicsMap({ levels, currentStack, onNavigate }: TopicsMa
                             <span className="text-[10px] text-foreground/10">{nodes.length} items</span>
                         </div>
 
-                        <div className="space-y-2 overflow-y-auto no-scrollbar pr-2 pb-10">
+                        <div
+                            className="space-y-2 overflow-y-auto no-scrollbar pr-2 pb-10"
+                            onScroll={handleScroll}
+                        >
                             {nodes.map((node) => {
                                 const isSelected = selectedInThisLevel?.id === node.id;
-
-                                // Calculate progress percentage
-                                // Max quiz score is 5, Max exam score is 15.
-                                // Let's use the better of the two relative to their max as the overall mastery.
                                 const quizRatio = (node.bestQuizScore || 0) / 5;
                                 const examRatio = (node.bestExamScore || 0) / 15;
                                 const masteryRatio = Math.max(quizRatio, examRatio);
@@ -44,6 +121,7 @@ export default function TopicsMap({ levels, currentStack, onNavigate }: TopicsMa
                                 return (
                                     <button
                                         key={node.id}
+                                        id={`node-${node.id}`}
                                         onClick={() => {
                                             const newPath = currentStack.slice(0, levelIndex).concat(node);
                                             onNavigate(newPath);
