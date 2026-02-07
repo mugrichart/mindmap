@@ -5,12 +5,14 @@ import { AiService } from '../ai/ai.service';
 import { CreateChatMessageDto } from './dto/create-chat-message.dto';
 import { Chat, ChatDocument } from './schemas/chat.schema';
 import { ChatMessage } from '../ai/interfaces/llm-provider.interface';
+import { Quiz, QuizDocument } from './schemas/quiz.schema';
 
 @Injectable()
 export class ChatsService {
     constructor(
         private readonly aiService: AiService,
         @InjectModel(Chat.name) private readonly chatModel: Model<ChatDocument>,
+        @InjectModel(Quiz.name) private readonly quizModel: Model<QuizDocument>,
     ) { }
 
     async findAllRoot() {
@@ -64,7 +66,6 @@ export class ChatsService {
                 chat.messages.push({ role: 'user', content: dto.content });
                 chat.messages.push({ role: 'assistant', content: response.content });
 
-                // Summarize every 3 back-and-forths (6 messages)
                 if (chat.messages.length % 6 === 0) {
                     const messagesToSummarize: ChatMessage[] = chat.messages.map(m => ({
                         role: m.role as any,
@@ -127,7 +128,6 @@ export class ChatsService {
                 }));
             }
         } else if (dto.parentId) {
-            // New chat with a parent, fetch parent summary for context
             const parent = await this.chatModel.findById(dto.parentId).exec();
             if (parent && parent.summary) {
                 conversation = [
@@ -140,7 +140,6 @@ export class ChatsService {
         }
 
         const currentMessages: ChatMessage[] = [...conversation, { role: 'user', content: dto.content }];
-
         let accumulatedResponse = '';
         const stream = this.aiService.stream(currentMessages, dto.model);
 
@@ -166,13 +165,11 @@ export class ChatsService {
             chat.messages.push({ role: 'user', content: dto.content });
             chat.messages.push({ role: 'assistant', content: accumulatedResponse });
 
-            // Summarize every 3 back-and-forths (6 messages)
             if (chat.messages.length % 6 === 0) {
                 const messagesToSummarize: ChatMessage[] = chat.messages.map(m => ({
                     role: m.role as any,
                     content: m.content
                 }));
-                // Run in background to not block the stream finish
                 this.aiService.summarize(messagesToSummarize).then(summary => {
                     chat.summary = summary;
                     chat.save();
@@ -189,5 +186,97 @@ export class ChatsService {
             { role: 'user', content: titlePrompt }
         ], 'gpt-4o');
         return response.content.replace(/["']/g, '').trim();
+    }
+
+    // Quiz and Exam Methods
+    async getQuiz(chatId: string) {
+        const chat = await this.findOne(chatId);
+        const questions = await this.aiService.generateQuizQuestions(
+            chat.messages.map(m => ({ role: m.role as any, content: m.content })),
+            5
+        );
+
+        // Overwrite: remove any previous quiz attempts for this chat
+        await this.quizModel.deleteMany({ chatId: new Types.ObjectId(chatId), type: 'quiz' }).exec();
+
+        const quiz = new this.quizModel({
+            chatId: new Types.ObjectId(chatId),
+            questions,
+            maxScore: questions.length,
+            type: 'quiz'
+        });
+
+        return quiz.save();
+    }
+
+    async getExam(chatId: string) {
+        const rootChat = await this.findOne(chatId);
+        const allQuestions: any[] = [];
+
+        const rootQuestions = await this.aiService.generateQuizQuestions(
+            rootChat.messages.map(m => ({ role: m.role as any, content: m.content })),
+            5
+        );
+        allQuestions.push(...rootQuestions);
+
+        const children = await this.findChildren(chatId);
+        for (const child of children) {
+            const childQuestions = await this.collectQuestionsForExam(child);
+            allQuestions.push(...childQuestions);
+        }
+
+        const EXAM_CAP = 15;
+        const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, EXAM_CAP);
+
+        // Overwrite: remove any previous exam attempts for this chat
+        await this.quizModel.deleteMany({ chatId: new Types.ObjectId(chatId), type: 'exam' }).exec();
+
+        const exam = new this.quizModel({
+            chatId: new Types.ObjectId(chatId),
+            questions: selected,
+            maxScore: selected.length,
+            type: 'exam'
+        });
+
+        return exam.save();
+    }
+
+    private async collectQuestionsForExam(chat: ChatDocument): Promise<any[]> {
+        return this.aiService.generateQuizQuestions(
+            chat.messages.map(m => ({ role: m.role as any, content: m.content })),
+            3
+        );
+    }
+
+    async submitQuiz(quizId: string, answers: number[]) {
+        const quiz = await this.quizModel.findById(quizId).exec();
+        if (!quiz) throw new NotFoundException('Quiz not found');
+
+        let score = 0;
+        quiz.questions.forEach((q, i) => {
+            q.userAnswer = answers[i];
+            if (q.userAnswer === q.correctAnswer) {
+                score++;
+            }
+        });
+
+        quiz.score = score;
+        quiz.completed = true;
+        await quiz.save();
+
+        const chat = await this.chatModel.findById(quiz.chatId).exec();
+        if (chat) {
+            if (quiz.type === 'quiz') {
+                chat.bestQuizScore = score;
+                chat.quizTaken = true;
+            } else {
+                chat.bestExamScore = score;
+                chat.examTaken = true;
+            }
+            await chat.save();
+        }
+
+        return quiz;
     }
 }

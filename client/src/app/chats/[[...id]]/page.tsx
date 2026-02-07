@@ -54,7 +54,15 @@ export default function ChatPage() {
             if (!rootsRes.ok) return;
             const rootsData = await rootsRes.json();
 
-            const newLevels = [rootsData.map((c: any) => ({ id: c._id, label: c.title, type: 'folder' }))];
+            const newLevels = [rootsData.map((c: any) => ({
+                id: c._id,
+                label: c.title,
+                type: 'folder',
+                bestQuizScore: c.bestQuizScore,
+                quizTaken: c.quizTaken,
+                bestExamScore: c.bestExamScore,
+                examTaken: c.examTaken
+            }))];
 
             // For each node in stack, fetch its children to form the next column
             for (let i = 0; i < navigationStack.length; i++) {
@@ -63,7 +71,15 @@ export default function ChatPage() {
                 if (res.ok) {
                     const childrenData = await res.json();
                     if (childrenData.length > 0) {
-                        newLevels.push(childrenData.map((c: any) => ({ id: c._id, label: c.title, type: 'folder' })));
+                        newLevels.push(childrenData.map((c: any) => ({
+                            id: c._id,
+                            label: c.title,
+                            type: 'folder',
+                            bestQuizScore: c.bestQuizScore,
+                            quizTaken: c.quizTaken,
+                            bestExamScore: c.bestExamScore,
+                            examTaken: c.examTaken
+                        })));
                     } else {
                         break;
                     }

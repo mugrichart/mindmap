@@ -4,6 +4,10 @@ export interface Node {
     id: string;
     label: string;
     type: "folder" | "chat";
+    bestQuizScore?: number;
+    quizTaken?: boolean;
+    bestExamScore?: number;
+    examTaken?: boolean;
     children?: Node[];
 }
 

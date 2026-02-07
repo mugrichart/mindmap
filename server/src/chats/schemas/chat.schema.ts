@@ -14,6 +14,18 @@ export class Chat {
     @Prop({ type: String })
     summary: string;
 
+    @Prop({ type: Number })
+    bestQuizScore: number;
+
+    @Prop({ type: Boolean, default: false })
+    quizTaken: boolean;
+
+    @Prop({ type: Number })
+    bestExamScore: number;
+
+    @Prop({ type: Boolean, default: false })
+    examTaken: boolean;
+
     @Prop({ type: Types.ObjectId, ref: 'Chat', default: null })
     parentId: Types.ObjectId | null;
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, ChevronDown, Check, CornerDownLeft, Menu } from "lucide-react";
+import { User, ChevronDown, Check, CornerDownLeft, Menu, X, Award, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import QuizModal from "@/components/QuizModal";
 
 const MODELS = [
     { id: "gpt-4o", name: "GPT-4o", provider: "OpenAI" },
@@ -38,10 +39,15 @@ export default function ChatInterface({
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [currentChatId, setCurrentChatId] = useState<string | null>(initialChatId || null);
+    const [chatData, setChatData] = useState<any>(null);
 
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+
+    // Quiz State
+    const [activeQuiz, setActiveQuiz] = useState<any>(null);
+    const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -62,6 +68,7 @@ export default function ChatInterface({
             fetchChatHistory(initialChatId);
         } else {
             setMessages([]);
+            setChatData(null);
         }
     }, [initialChatId]);
 
@@ -71,6 +78,7 @@ export default function ChatInterface({
             const response = await fetch(`http://localhost:3001/chats/${id}`);
             if (response.ok) {
                 const data = await response.json();
+                setChatData(data);
                 const history: Message[] = data.messages.map((m: any, i: number) => ({
                     id: `${id}-${i}`,
                     role: m.role,
@@ -90,7 +98,6 @@ export default function ChatInterface({
     }, [messages]);
 
     const preprocessMarkdown = (text: string) => {
-        // OpenAI sends math in \( \) and \[ \] format, but remark-math expects $ $ and $$ $$
         return text
             .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // inline math
             .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$'); // block math
@@ -164,7 +171,6 @@ export default function ChatInterface({
                             }
 
                             if (data.metadata) {
-                                // New chat created
                                 setCurrentChatId(data.metadata.chatId);
                                 if (onChatCreated) {
                                     onChatCreated(data.metadata.chatId, data.metadata.title);
@@ -186,6 +192,31 @@ export default function ChatInterface({
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const startTest = async (type: 'quiz' | 'exam') => {
+        if (!currentChatId) return;
+
+        const alreadyTaken = type === 'quiz' ? chatData?.quizTaken : chatData?.examTaken;
+        if (alreadyTaken) {
+            const confirmed = window.confirm(`You've already taken this ${type}. Starting a new one will overwrite your previous score. Are you sure?`);
+            if (!confirmed) return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:3001/chats/${currentChatId}/${type}`);
+            if (response.ok) {
+                const data = await response.json();
+                setActiveQuiz(data);
+                setIsQuizModalOpen(true);
+            }
+        } catch (error) {
+            console.error(`Failed to start ${type}:`, error);
+        }
+    };
+
+    const handleQuizComplete = (score: number) => {
+        if (currentChatId) fetchChatHistory(currentChatId);
     };
 
     return (
@@ -241,7 +272,38 @@ export default function ChatInterface({
                         )}
                     </div>
                 </div>
+
+                {/* Performance Actions */}
+                {currentChatId && !isFetchingHistory && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => startTest('quiz')}
+                            className="bg-white/5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-foreground/40 hover:text-heading hover:bg-white/10 transition-all"
+                        >
+                            Quiz
+                        </button>
+
+                        {chatData?.bestQuizScore > 0 && (
+                            <button
+                                onClick={() => startTest('exam')}
+                                className="bg-primary/10 border border-primary/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/20 transition-all"
+                            >
+                                Exam
+                            </button>
+                        )}
+                    </div>
+                )}
             </header>
+
+            {isQuizModalOpen && activeQuiz && (
+                <QuizModal
+                    quizId={activeQuiz._id}
+                    type={activeQuiz.type}
+                    questions={activeQuiz.questions}
+                    onClose={() => setIsQuizModalOpen(false)}
+                    onComplete={handleQuizComplete}
+                />
+            )}
 
             {/* Messages */}
             <div
@@ -293,7 +355,6 @@ export default function ChatInterface({
                                                         const match = /language-(\w+)/.exec(className || '');
                                                         return !inline && match ? (
                                                             <div className="relative group my-2">
-                                                                {/* Transparent-floating language tag */}
                                                                 <div className="absolute top-0 right-4 px-2 py-1 bg-white/5 rounded-b-lg border-x border-b border-white/5 text-[9px] text-foreground/20 font-bold uppercase tracking-widest z-10 group-hover:text-primary transition-colors select-none">
                                                                     {match[1]}
                                                                 </div>

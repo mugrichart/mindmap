@@ -46,4 +46,19 @@ export class ChatsController {
 
         res.end();
     }
+
+    @Get(':id/quiz')
+    async getQuiz(@Param('id') id: string) {
+        return this.chatsService.getQuiz(id);
+    }
+
+    @Get(':id/exam')
+    async getExam(@Param('id') id: string) {
+        return this.chatsService.getExam(id);
+    }
+
+    @Post('quiz/:quizId/submit')
+    async submitQuiz(@Param('quizId') quizId: string, @Body('answers') answers: number[]) {
+        return this.chatsService.submitQuiz(quizId, answers);
+    }
 }

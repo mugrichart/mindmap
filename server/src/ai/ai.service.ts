@@ -22,4 +22,31 @@ export class AiService {
         ]);
         return response.content;
     }
+
+    async generateQuizQuestions(messages: ChatMessage[], count: number = 5): Promise<any[]> {
+        const quizPrompt = `Based on the conversation above, generate ${count} multiple-choice questions to test the user's understanding. 
+        Return ONLY a JSON array of objects with the following structure:
+        [
+          {
+            "question": "string",
+            "options": ["string", "string", "string", "string"],
+            "correctAnswer": 0 // index of correct option
+          }
+        ]
+        Make sure the questions are challenging and cover the key concepts discussed.`;
+
+        const response = await this.openaiProvider.chat([
+            ...messages,
+            { role: 'user', content: quizPrompt }
+        ], 'gpt-4o');
+
+        try {
+            // Clean the response if it contains markdown code blocks
+            const cleaned = response.content.replace(/```json|```/g, '').trim();
+            return JSON.parse(cleaned);
+        } catch (error) {
+            console.error('Failed to parse quiz questions:', error);
+            return [];
+        }
+    }
 }
