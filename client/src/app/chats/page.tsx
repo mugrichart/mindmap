@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import TopicsMap from "@/components/TopicsMap";
-import { MOCK_DATA } from "@/lib/data";
 
 export default function ChatPage() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -13,6 +12,42 @@ export default function ChatPage() {
 
     // The chat currently shown. If null, we are starting a NEW topic in the current context.
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
+    const [mapLevels, setMapLevels] = useState<any[][]>([]);
+
+    useEffect(() => {
+        if (isMapOpen) {
+            fetchMapLevels();
+        }
+    }, [isMapOpen, navigationStack]);
+
+    const fetchMapLevels = async () => {
+        try {
+            // Level 0: Roots
+            const rootsRes = await fetch("http://localhost:3001/chats");
+            if (!rootsRes.ok) return;
+            const rootsData = await rootsRes.json();
+
+            const newLevels = [rootsData.map((c: any) => ({ id: c._id, label: c.title, type: 'folder' }))];
+
+            // For each node in stack, fetch its children to form the next column
+            for (let i = 0; i < navigationStack.length; i++) {
+                const node = navigationStack[i];
+                const res = await fetch(`http://localhost:3001/chats/${node.id}/children`);
+                if (res.ok) {
+                    const childrenData = await res.json();
+                    if (childrenData.length > 0) {
+                        newLevels.push(childrenData.map((c: any) => ({ id: c._id, label: c.title, type: 'folder' })));
+                    } else {
+                        // Even if no children, we might want to show an empty column hint, but for now we stop
+                        break;
+                    }
+                }
+            }
+            setMapLevels(newLevels);
+        } catch (error) {
+            console.error("Error fetching map levels:", error);
+        }
+    };
 
     const handleNodeClick = (node: any) => {
         setNavigationStack([...navigationStack, node]);
@@ -101,7 +136,7 @@ export default function ChatPage() {
                         </div>
                         <div className="flex-1 overflow-auto custom-scrollbar">
                             <TopicsMap
-                                data={[]} // We will fix the map data later
+                                levels={mapLevels}
                                 currentStack={navigationStack}
                                 onNavigate={handleMapNavigate}
                             />
