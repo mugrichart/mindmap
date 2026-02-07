@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
+import { Controller, Post, Body, Res, Get, Param, Query } from '@nestjs/common';
 import type { Response } from 'express';
 import { ChatsService } from './chats.service';
 import { CreateChatMessageDto } from './dto/create-chat-message.dto';
@@ -6,6 +6,21 @@ import { CreateChatMessageDto } from './dto/create-chat-message.dto';
 @Controller('chats')
 export class ChatsController {
     constructor(private readonly chatsService: ChatsService) { }
+
+    @Get()
+    async getRootChats() {
+        return this.chatsService.findAllRoot();
+    }
+
+    @Get(':id')
+    async getChat(@Param('id') id: string) {
+        return this.chatsService.findOne(id);
+    }
+
+    @Get(':id/children')
+    async getChildren(@Param('id') id: string) {
+        return this.chatsService.findChildren(id);
+    }
 
     @Post('message')
     async sendMessage(@Body() dto: CreateChatMessageDto) {
@@ -21,7 +36,7 @@ export class ChatsController {
         const iterable = this.chatsService.getStream(dto);
 
         for await (const chunk of iterable) {
-            res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
         }
 
         res.end();

@@ -1,9 +1,7 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronRight, Folder, MessageSquare, Plus, GitGraph } from "lucide-react";
 
-import { Node, MOCK_DATA } from "@/lib/data";
+import { Node } from "@/lib/data";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -12,6 +10,7 @@ interface SidebarProps {
     onBack: () => void;
     onSetStack: (stack: Node[]) => void;
     onShowMap: () => void;
+    onNewChat: () => void;
 }
 
 export default function Sidebar({
@@ -20,21 +19,48 @@ export default function Sidebar({
     onFolderClick,
     onBack,
     onSetStack,
-    onShowMap
+    onShowMap,
+    onNewChat
 }: SidebarProps) {
-    const handleFolderClick = (node: Node) => {
-        if (node.type === "folder") {
-            onFolderClick(node);
+    const [currentLevelData, setCurrentLevelData] = useState<Node[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        fetchData();
+    }, [navigationStack]);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const lastNode = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1] : null;
+            const url = lastNode
+                ? `http://localhost:3001/chats/${lastNode.id}/children`
+                : `http://localhost:3001/chats`;
+
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                const nodes: Node[] = data.map((chat: any) => ({
+                    id: chat._id,
+                    label: chat.title,
+                    type: "folder" // We treat all chats as folders since they can have subtopics
+                }));
+                setCurrentLevelData(nodes);
+            }
+        } catch (error) {
+            console.error("Failed to fetch sidebar data:", error);
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    const handleFolderClick = (node: Node) => {
+        onFolderClick(node);
     };
 
     const goBack = () => {
         onBack();
     };
-
-    const currentLevel = navigationStack.length > 0
-        ? navigationStack[navigationStack.length - 1].children || []
-        : MOCK_DATA;
 
     const currentTitle = navigationStack.length > 0
         ? navigationStack[navigationStack.length - 1].label
@@ -73,27 +99,32 @@ export default function Sidebar({
                 </div>
 
                 <div className="space-y-1">
-                    {currentLevel.map((node, i) => (
-                        <button
-                            key={node.id}
-                            onClick={() => node.type === "folder" ? handleFolderClick(node) : null}
-                            className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group whitespace-nowrap"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${node.type === 'folder' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'}`}>
-                                    {node.type === 'folder' ? <Folder size={16} /> : <MessageSquare size={16} />}
+                    {isLoading ? (
+                        <div className="px-3 py-4 text-xs text-foreground/30 italic">Loading...</div>
+                    ) : (
+                        currentLevelData.map((node) => (
+                            <button
+                                key={node.id}
+                                onClick={() => handleFolderClick(node)}
+                                className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group whitespace-nowrap"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-secondary/10 text-secondary">
+                                        <Folder size={16} />
+                                    </div>
+                                    <span className="text-sm font-medium text-foreground/80 group-hover:text-heading transition-colors line-clamp-1 text-left">
+                                        {node.label}
+                                    </span>
                                 </div>
-                                <span className="text-sm font-medium text-foreground/80 group-hover:text-heading transition-colors line-clamp-1 text-left">
-                                    {node.label}
-                                </span>
-                            </div>
-                            {node.type === "folder" && (
                                 <ChevronRight size={14} className="text-foreground/20 group-hover:text-foreground/50 group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </button>
-                    ))}
+                            </button>
+                        ))
+                    )}
 
-                    <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group border border-dashed border-white/5 mt-2 whitespace-nowrap">
+                    <button
+                        onClick={onNewChat}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group border border-dashed border-white/5 mt-2 whitespace-nowrap"
+                    >
                         <div className="p-2 rounded-lg bg-white/5 text-foreground/40 group-hover:text-primary transition-colors">
                             <Plus size={16} />
                         </div>

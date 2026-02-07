@@ -11,20 +11,58 @@ export default function ChatPage() {
     const [navigationStack, setNavigationStack] = useState<any[]>([]);
     const [isMapOpen, setIsMapOpen] = useState(false);
 
-    const handleFolderClick = (node: any) => {
+    // The chat currently shown. If null, we are starting a NEW topic in the current context.
+    const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+    const handleNodeClick = (node: any) => {
         setNavigationStack([...navigationStack, node]);
+        setActiveChatId(node.id);
     };
 
     const handleBack = () => {
-        setNavigationStack(navigationStack.slice(0, -1));
+        const newStack = navigationStack.slice(0, -1);
+        setNavigationStack(newStack);
+        if (newStack.length > 0) {
+            setActiveChatId(newStack[newStack.length - 1].id);
+        } else {
+            setActiveChatId(null);
+        }
     };
 
     const handleSetStack = (newStack: any[]) => {
         setNavigationStack(newStack);
+        if (newStack.length > 0) {
+            setActiveChatId(newStack[newStack.length - 1].id);
+        } else {
+            setActiveChatId(null);
+        }
     };
+
+    const handleNewChat = () => {
+        // Clearing activeChatId means ChatInterface will start a new conversation
+        // parentId will be the last item in stack if there is one
+        setActiveChatId(null);
+    };
+
+    const handleChatCreated = (chatId: string, title: string) => {
+        // When a new chat is created by ChatInterface, it becomes the head of our current context
+        const newNode = { id: chatId, label: title, type: "folder" }; // Folders can have subtopics
+        const newStack = [...navigationStack, newNode];
+        setNavigationStack(newStack);
+        setActiveChatId(chatId);
+    };
+
+    const parentId = navigationStack.length > 0
+        ? navigationStack[navigationStack.length - 1].id
+        : null;
 
     const handleMapNavigate = (newStack: any[]) => {
         setNavigationStack(newStack);
+        if (newStack.length > 0) {
+            setActiveChatId(newStack[newStack.length - 1].id);
+        } else {
+            setActiveChatId(null);
+        }
         setIsMapOpen(false);
     };
 
@@ -33,12 +71,18 @@ export default function ChatPage() {
             <Sidebar
                 isOpen={sidebarOpen}
                 navigationStack={navigationStack}
-                onFolderClick={handleFolderClick}
+                onFolderClick={handleNodeClick}
                 onBack={handleBack}
                 onSetStack={handleSetStack}
                 onShowMap={() => setIsMapOpen(true)}
+                onNewChat={handleNewChat}
             />
-            <ChatInterface onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+            <ChatInterface
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                chatId={activeChatId}
+                parentId={parentId}
+                onChatCreated={handleChatCreated}
+            />
 
             {isMapOpen && (
                 <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-2xl flex items-center justify-center p-6 sm:p-12 animate-in fade-in duration-300">
@@ -57,7 +101,7 @@ export default function ChatPage() {
                         </div>
                         <div className="flex-1 overflow-auto custom-scrollbar">
                             <TopicsMap
-                                data={MOCK_DATA}
+                                data={[]} // We will fix the map data later
                                 currentStack={navigationStack}
                                 onNavigate={handleMapNavigate}
                             />

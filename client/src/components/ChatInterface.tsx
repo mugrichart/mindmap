@@ -21,25 +21,25 @@ interface Message {
 
 interface ChatInterfaceProps {
     onToggleSidebar: () => void;
+    chatId?: string | null;
+    parentId?: string | null;
+    onChatCreated?: (chatId: string, title: string) => void;
 }
 
-export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
+export default function ChatInterface({
+    onToggleSidebar,
+    chatId: initialChatId,
+    parentId,
+    onChatCreated
+}: ChatInterfaceProps) {
     const [selectedModel, setSelectedModel] = useState(MODELS[0]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: "1",
-            role: "user",
-            content: "Explain how backpropagation works in deep neural networks.",
-        },
-        {
-            id: "2",
-            role: "assistant",
-            content: "Backpropagation is a key algorithm used for training artificial neural networks and plays a crucial role in the success of many machine learning models, particularly deep learning. It is a supervised learning algorithm that aims to minimize the error between the predicted output of a network and the actual target values by adjusting the weights of the network. Here is a step-by-step explanation of how backpropagation works:\n\n1. **Initialization**: \n   - Start with a neural network that has a set architecture with an input layer, one or more hidden layers, and an output layer. \n   - Initialize the weights and biases of the network with small random values.\n\n2. **Forward Pass**:\n   - Input data is passed through the network. Each neuron processes the input using a weighted sum and an activation function to produce an output.\n   - This output is passed to the next layer until the final output of the network is produced.\n\n3. **Compute Error (Loss Function)**:\n   - The output from the forward pass is compared to the true target values using a loss function (such as mean squared error for regression tasks or cross-entropy loss for classification tasks).\n   - The loss function quantifies how far the network's predictions are from the actual target values.\n\n4. **Backward Pass (Backpropagation)**:\n   - **Error Propagation**: The error from the output layer is propagated backward through the network. This is where the term \"backpropagation\" comes from.\n   - **Gradient Calculation**: Using calculus and chain rule, compute the gradient of the loss function with respect to each weight in the network. This is done using the derivative of the loss with respect to the network’s output, and then applying the chain rule through each neuron back to the inputs.\n   - **Chain Rule**: For each neuron, the gradient is calculated by multiplying the gradient of the neuron’s activation with the gradient of the loss function with respect to the neuron's output. This allows for calculating how much each neuron and weight in the network contributed to the error.\n\n5. **Weight Update**:\n   - Use the calculated gradients to update the weights and biases in the network. This is typically done using an optimization algorithm like Stochastic Gradient Descent (SGD), where weights are adjusted by subtracting the product of the learning rate and the gradient. \n   - \\( w_{\\text{new}} = w_{\\text{old}} - \\eta \\cdot \\nabla E \\), where \\( \\eta \\) is the learning rate, and \\( \\nabla E \\) is the gradient of the error.\n\n6. **Iteration**:\n   - The process is repeated for many epochs or iterations over the training dataset until the loss function converges to a minimum value, indicating that the model has learned to approximate the function mapping inputs to outputs effectively.\n\n7. **Convergence & Fine-Tuning**:\n   - Optionally, techniques like early stopping, learning rate schedules, and hyperparameter tuning can be employed to further optimize the training process and prevent overfitting.\n\nBackpropagation is effective because it provides a systematic method for updating the parameters of the model, making it possible to train very deep networks as used in modern deep learning applications.",
-        },
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [currentChatId, setCurrentChatId] = useState<string | null>(initialChatId || null);
+
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetchingHistory, setIsFetchingHistory] = useState(false);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -50,6 +50,36 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
                 top: scrollRef.current.scrollHeight,
                 behavior: "smooth"
             });
+        }
+    };
+
+    // Reset or fetch history when chatId changes
+    useEffect(() => {
+        setCurrentChatId(initialChatId || null);
+        if (initialChatId) {
+            fetchChatHistory(initialChatId);
+        } else {
+            setMessages([]);
+        }
+    }, [initialChatId]);
+
+    const fetchChatHistory = async (id: string) => {
+        setIsFetchingHistory(true);
+        try {
+            const response = await fetch(`http://localhost:3001/chats/${id}`);
+            if (response.ok) {
+                const data = await response.json();
+                const history: Message[] = data.messages.map((m: any, i: number) => ({
+                    id: `${id}-${i}`,
+                    role: m.role,
+                    content: m.content
+                }));
+                setMessages(history);
+            }
+        } catch (error) {
+            console.error("Failed to fetch chat history:", error);
+        } finally {
+            setIsFetchingHistory(false);
         }
     };
 
@@ -90,6 +120,8 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
                 body: JSON.stringify({
                     content: userMessage.content,
                     model: selectedModel.id,
+                    chatId: currentChatId,
+                    parentId: parentId
                 }),
             });
 
@@ -119,13 +151,23 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
                     if (line.startsWith("data: ")) {
                         try {
                             const data = JSON.parse(line.slice(6));
-                            accumulatedContent += data.content;
 
-                            setMessages(prev => prev.map(msg =>
-                                msg.id === assistantMessageId
-                                    ? { ...msg, content: accumulatedContent }
-                                    : msg
-                            ));
+                            if (data.content) {
+                                accumulatedContent += data.content;
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, content: accumulatedContent }
+                                        : msg
+                                ));
+                            }
+
+                            if (data.metadata) {
+                                // New chat created
+                                setCurrentChatId(data.metadata.chatId);
+                                if (onChatCreated) {
+                                    onChatCreated(data.metadata.chatId, data.metadata.title);
+                                }
+                            }
                         } catch (e) {
                             console.error("Error parsing stream chunk", e);
                         }
@@ -205,41 +247,51 @@ export default function ChatInterface({ onToggleSidebar }: ChatInterfaceProps) {
                 className="flex-1 overflow-y-auto px-4 py-8 no-scrollbar"
             >
                 <div className="max-w-3xl mx-auto space-y-12">
-                    {messages.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-                        >
-                            <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai w-full text-sm md:text-base leading-relaxed'}>
-                                {msg.role === 'assistant' && msg.content === "" && isLoading ? (
-                                    <div className="flex gap-1 items-center h-6">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20 animate-bounce" style={{ animationDelay: '300ms' }} />
-                                    </div>
-                                ) : msg.role === 'user' ? (
-                                    <div className="whitespace-pre-wrap">{msg.content}</div>
-                                ) : (
-                                    <article className="prose prose-invert prose-slate max-w-none 
-                                        prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
-                                        prose-strong:text-heading prose-strong:font-bold
-                                        prose-headings:text-heading prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-4
-                                        prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4 prose-ul:space-y-2
-                                        prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4 prose-ol:space-y-2
-                                        prose-li:text-foreground/80
-                                        prose-code:bg-white/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-primary prose-code:before:content-none prose-code:after:content-none
-                                    ">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm, remarkMath]}
-                                            rehypePlugins={[rehypeKatex]}
-                                        >
-                                            {preprocessMarkdown(msg.content)}
-                                        </ReactMarkdown>
-                                    </article>
-                                )}
-                            </div>
+                    {isFetchingHistory ? (
+                        <div className="flex flex-col items-center justify-center h-full pt-20 text-foreground/20 italic text-sm">
+                            Retrieving knowledge...
                         </div>
-                    ))}
+                    ) : messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full pt-20 text-foreground/20 italic text-sm">
+                            Start a new topic to expand the map
+                        </div>
+                    ) : (
+                        messages.map((msg) => (
+                            <div
+                                key={msg.id}
+                                className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                            >
+                                <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai w-full text-sm md:text-base leading-relaxed'}>
+                                    {msg.role === 'assistant' && msg.content === "" && isLoading ? (
+                                        <div className="flex gap-1 items-center h-6">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-foreground/20 animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-foreground/20 animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-foreground/20 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                    ) : msg.role === 'user' ? (
+                                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                                    ) : (
+                                        <article className="prose prose-invert prose-slate max-w-none 
+                                            prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:mb-4
+                                            prose-strong:text-heading prose-strong:font-bold
+                                            prose-headings:text-heading prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-4
+                                            prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4 prose-ul:space-y-2
+                                            prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4 prose-ol:space-y-2
+                                            prose-li:text-foreground/80
+                                            prose-code:bg-white/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-primary prose-code:before:content-none prose-code:after:content-none
+                                        ">
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm, remarkMath]}
+                                                rehypePlugins={[rehypeKatex]}
+                                            >
+                                                {preprocessMarkdown(msg.content)}
+                                            </ReactMarkdown>
+                                        </article>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
