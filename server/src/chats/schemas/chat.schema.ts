@@ -11,6 +11,9 @@ export class Chat {
     @Prop({ type: [{ role: String, content: String }], default: [] })
     messages: { role: string; content: string }[];
 
+    @Prop({ type: String })
+    summary: string;
+
     @Prop({ type: Types.ObjectId, ref: 'Chat', default: null })
     parentId: Types.ObjectId | null;
 

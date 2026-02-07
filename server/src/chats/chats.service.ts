@@ -63,12 +63,39 @@ export class ChatsService {
 
                 chat.messages.push({ role: 'user', content: dto.content });
                 chat.messages.push({ role: 'assistant', content: response.content });
+
+                // Summarize every 3 back-and-forths (6 messages)
+                if (chat.messages.length % 6 === 0) {
+                    const messagesToSummarize: ChatMessage[] = chat.messages.map(m => ({
+                        role: m.role as any,
+                        content: m.content
+                    }));
+                    this.aiService.summarize(messagesToSummarize).then(summary => {
+                        chat.summary = summary;
+                        chat.save();
+                    }).catch(err => console.error('Summarization failed:', err));
+                }
+
                 await chat.save();
                 return response.content;
             }
         }
 
+        let conversation: ChatMessage[] = [];
+        if (dto.parentId) {
+            const parent = await this.chatModel.findById(dto.parentId).exec();
+            if (parent && parent.summary) {
+                conversation = [
+                    {
+                        role: 'system',
+                        content: `Context from parent topic ("${parent.title}"): ${parent.summary}\nUse this to understand the background of the user's request.`
+                    }
+                ];
+            }
+        }
+
         const response = await this.aiService.chat([
+            ...conversation,
             { role: 'user', content: dto.content }
         ], dto.model);
 
@@ -99,6 +126,17 @@ export class ChatsService {
                     content: m.content
                 }));
             }
+        } else if (dto.parentId) {
+            // New chat with a parent, fetch parent summary for context
+            const parent = await this.chatModel.findById(dto.parentId).exec();
+            if (parent && parent.summary) {
+                conversation = [
+                    {
+                        role: 'system',
+                        content: `Context from parent topic ("${parent.title}"): ${parent.summary}\nUse this to understand the background of the user's request.`
+                    }
+                ];
+            }
         }
 
         const currentMessages: ChatMessage[] = [...conversation, { role: 'user', content: dto.content }];
@@ -127,6 +165,20 @@ export class ChatsService {
         } else if (chat) {
             chat.messages.push({ role: 'user', content: dto.content });
             chat.messages.push({ role: 'assistant', content: accumulatedResponse });
+
+            // Summarize every 3 back-and-forths (6 messages)
+            if (chat.messages.length % 6 === 0) {
+                const messagesToSummarize: ChatMessage[] = chat.messages.map(m => ({
+                    role: m.role as any,
+                    content: m.content
+                }));
+                // Run in background to not block the stream finish
+                this.aiService.summarize(messagesToSummarize).then(summary => {
+                    chat.summary = summary;
+                    chat.save();
+                }).catch(err => console.error('Summarization failed:', err));
+            }
+
             await chat.save();
         }
     }
