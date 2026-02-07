@@ -72,7 +72,7 @@ export default function Sidebar({
                 }`}
         >
 
-            <div className="flex-1 overflow-y-auto px-3 pt-6 space-y-1">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-6 space-y-1 no-scrollbar">
 
                 {/* Active Topic Indicator - Only show if in a sub-level */}
                 {navigationStack.length > 0 && (
