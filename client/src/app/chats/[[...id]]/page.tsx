@@ -1,18 +1,45 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import TopicsMap from "@/components/TopicsMap";
 
 export default function ChatPage() {
+    const params = useParams();
+    const router = useRouter();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [navigationStack, setNavigationStack] = useState<any[]>([]);
     const [isMapOpen, setIsMapOpen] = useState(false);
 
-    // The chat currently shown. If null, we are starting a NEW topic in the current context.
+    // The chat currently shown.
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
+    const [navigationStack, setNavigationStack] = useState<any[]>([]);
     const [mapLevels, setMapLevels] = useState<any[][]>([]);
+
+    // Sync with URL ID
+    useEffect(() => {
+        const idFromUrl = Array.isArray(params.id) ? params.id[0] : params.id;
+        if (idFromUrl && idFromUrl !== activeChatId) {
+            handleUrlChange(idFromUrl);
+        } else if (!idFromUrl) {
+            setActiveChatId(null);
+            setNavigationStack([]);
+        }
+    }, [params.id]);
+
+    const handleUrlChange = async (id: string) => {
+        try {
+            const response = await fetch(`http://localhost:3001/chats/${id}/ancestry`);
+            if (response.ok) {
+                const ancestry = await response.json();
+                setNavigationStack(ancestry);
+                setActiveChatId(id);
+            }
+        } catch (error) {
+            console.error("Failed to sync with URL:", error);
+        }
+    };
 
     useEffect(() => {
         if (isMapOpen) {
@@ -38,7 +65,6 @@ export default function ChatPage() {
                     if (childrenData.length > 0) {
                         newLevels.push(childrenData.map((c: any) => ({ id: c._id, label: c.title, type: 'folder' })));
                     } else {
-                        // Even if no children, we might want to show an empty column hint, but for now we stop
                         break;
                     }
                 }
@@ -49,42 +75,44 @@ export default function ChatPage() {
         }
     };
 
+    const navigateTo = (id: string | null) => {
+        if (id) {
+            router.push(`/chats/${id}`);
+        } else {
+            router.push('/chats');
+        }
+    };
+
     const handleNodeClick = (node: any) => {
-        setNavigationStack([...navigationStack, node]);
-        setActiveChatId(node.id);
+        navigateTo(node.id);
     };
 
     const handleBack = () => {
         const newStack = navigationStack.slice(0, -1);
-        setNavigationStack(newStack);
         if (newStack.length > 0) {
-            setActiveChatId(newStack[newStack.length - 1].id);
+            navigateTo(newStack[newStack.length - 1].id);
         } else {
-            setActiveChatId(null);
+            navigateTo(null);
         }
     };
 
     const handleSetStack = (newStack: any[]) => {
-        setNavigationStack(newStack);
         if (newStack.length > 0) {
-            setActiveChatId(newStack[newStack.length - 1].id);
+            navigateTo(newStack[newStack.length - 1].id);
         } else {
-            setActiveChatId(null);
+            navigateTo(null);
         }
     };
 
     const handleNewChat = () => {
-        // Clearing activeChatId means ChatInterface will start a new conversation
-        // parentId will be the last item in stack if there is one
         setActiveChatId(null);
+        // We don't necessarily clear the stack here if we want to stay in context,
+        // but the URL should reflect we are in a "new" state for the current parent.
+        // For now, let's just stick to the current parent logic.
     };
 
     const handleChatCreated = (chatId: string, title: string) => {
-        // When a new chat is created by ChatInterface, it becomes the head of our current context
-        const newNode = { id: chatId, label: title, type: "folder" }; // Folders can have subtopics
-        const newStack = [...navigationStack, newNode];
-        setNavigationStack(newStack);
-        setActiveChatId(chatId);
+        navigateTo(chatId);
     };
 
     const parentId = navigationStack.length > 0
@@ -92,11 +120,10 @@ export default function ChatPage() {
         : null;
 
     const handleMapNavigate = (newStack: any[]) => {
-        setNavigationStack(newStack);
         if (newStack.length > 0) {
-            setActiveChatId(newStack[newStack.length - 1].id);
+            navigateTo(newStack[newStack.length - 1].id);
         } else {
-            setActiveChatId(null);
+            navigateTo(null);
         }
         setIsMapOpen(false);
     };

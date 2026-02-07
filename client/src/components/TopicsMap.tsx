@@ -45,7 +45,7 @@ export default function TopicsMap({ levels, currentStack, onNavigate }: TopicsMa
                                         className={`w-full group flex items-start gap-4 p-4 rounded-3xl transition-all border text-left
                                             ${isSelected
                                                 ? 'bg-primary/5 border-primary/30 text-heading shadow-[0_0_30px_rgba(255,255,255,0.03)]'
-                                                : 'bg-white/[0.02] border-white/5 text-foreground/40 hover:bg-white/[0.04] hover:text-foreground/80'
+                                                : 'bg-white/2 border-white/5 text-foreground/40 hover:bg-white/4 hover:text-foreground/80'
                                             }
                                         `}
                                     >

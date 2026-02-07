@@ -17,6 +17,11 @@ export class ChatsController {
         return this.chatsService.findOne(id);
     }
 
+    @Get(':id/ancestry')
+    async getAncestry(@Param('id') id: string) {
+        return this.chatsService.getAncestry(id);
+    }
+
     @Get(':id/children')
     async getChildren(@Param('id') id: string) {
         return this.chatsService.findChildren(id);

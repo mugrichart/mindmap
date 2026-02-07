@@ -27,6 +27,26 @@ export class ChatsService {
         return this.chatModel.find({ parentId: new Types.ObjectId(parentId) }).sort({ createdAt: 1 }).exec();
     }
 
+    async getAncestry(id: string) {
+        const ancestry: any[] = [];
+        let current = await this.chatModel.findById(id).lean().exec();
+
+        while (current) {
+            ancestry.unshift({
+                id: current._id,
+                label: current.title,
+                type: 'folder'
+            });
+            if (current.parentId) {
+                current = await this.chatModel.findById(current.parentId).lean().exec();
+            } else {
+                current = null;
+            }
+        }
+
+        return ancestry;
+    }
+
     async sendMessage(dto: CreateChatMessageDto): Promise<string> {
         if (dto.chatId) {
             const chat = await this.chatModel.findById(dto.chatId).exec();
