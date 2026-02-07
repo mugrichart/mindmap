@@ -6,6 +6,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const MODELS = [
     { id: "gpt-4o", name: "GPT-4o", provider: "OpenAI" },
@@ -283,6 +285,48 @@ export default function ChatInterface({
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm, remarkMath]}
                                                 rehypePlugins={[rehypeKatex]}
+                                                components={{
+                                                    pre({ children }) {
+                                                        return <>{children}</>;
+                                                    },
+                                                    code({ node, inline, className, children, ...props }: any) {
+                                                        const match = /language-(\w+)/.exec(className || '');
+                                                        return !inline && match ? (
+                                                            <div className="relative group my-2">
+                                                                {/* Transparent-floating language tag */}
+                                                                <div className="absolute top-0 right-4 px-2 py-1 bg-white/5 rounded-b-lg border-x border-b border-white/5 text-[9px] text-foreground/20 font-bold uppercase tracking-widest z-10 group-hover:text-primary transition-colors select-none">
+                                                                    {match[1]}
+                                                                </div>
+                                                                <SyntaxHighlighter
+                                                                    style={vscDarkPlus}
+                                                                    language={match[1]}
+                                                                    PreTag="div"
+                                                                    className="rounded-xl border border-white/5 bg-white/2 shadow-sm"
+                                                                    customStyle={{
+                                                                        margin: 0,
+                                                                        padding: '1.25rem',
+                                                                        fontSize: 'inherit',
+                                                                        lineHeight: '1.6',
+                                                                        background: 'transparent',
+                                                                    }}
+                                                                    codeTagProps={{
+                                                                        style: {
+                                                                            background: 'transparent',
+                                                                            display: 'block',
+                                                                        }
+                                                                    }}
+                                                                    {...props}
+                                                                >
+                                                                    {String(children).trim()}
+                                                                </SyntaxHighlighter>
+                                                            </div>
+                                                        ) : (
+                                                            <code className={className} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    },
+                                                }}
                                             >
                                                 {preprocessMarkdown(msg.content)}
                                             </ReactMarkdown>
