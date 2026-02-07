@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, Folder, MessageSquare, Plus, GitGraph } from "lucide-react";
+import { ChevronRight, Folder, MessageSquare, Plus, GitGraph, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { Node } from "@/lib/data";
 
@@ -24,12 +25,16 @@ export default function Sidebar({
 }: SidebarProps) {
     const [currentLevelData, setCurrentLevelData] = useState<Node[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const { token, user, logout } = useAuth();
 
     useEffect(() => {
-        fetchData();
-    }, [navigationStack]);
+        if (token) {
+            fetchData();
+        }
+    }, [navigationStack, token]);
 
     const fetchData = async () => {
+        if (!token) return;
         setIsLoading(true);
         try {
             const lastNode = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1] : null;
@@ -37,7 +42,9 @@ export default function Sidebar({
                 ? `http://localhost:3001/chats/${lastNode.id}/children`
                 : `http://localhost:3001/chats`;
 
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (response.ok) {
                 const data = await response.json();
                 const nodes: Node[] = data.map((chat: any) => ({
@@ -172,14 +179,18 @@ export default function Sidebar({
 
             {/* Avatar at Bottom */}
             <div className="p-4 border-t border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-3 whitespace-nowrap">
-                    <div className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-heading">
-                        JD
+                <div className="flex items-center gap-3 whitespace-nowrap group relative">
+                    <div className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-heading uppercase">
+                        {user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'}
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-heading">John Doe</span>
-                        <span className="text-[9px] text-foreground/40 uppercase tracking-tighter cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
-                            Settings
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[11px] font-bold text-heading truncate max-w-[120px]">{user?.name}</span>
+                        <span
+                            onClick={logout}
+                            className="text-[9px] text-foreground/40 uppercase tracking-tighter cursor-pointer hover:text-red-400 transition-colors flex items-center gap-1 font-black"
+                        >
+                            <LogOut size={10} />
+                            Sign Out
                         </span>
                     </div>
                 </div>

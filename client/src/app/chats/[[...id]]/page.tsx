@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import TopicsMap from "@/components/TopicsMap";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ChatPage() {
     const params = useParams();
     const router = useRouter();
+    const { token, user, isLoading } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isMapOpen, setIsMapOpen] = useState(false);
 
@@ -17,8 +19,16 @@ export default function ChatPage() {
     const [navigationStack, setNavigationStack] = useState<any[]>([]);
     const [mapLevels, setMapLevels] = useState<any[][]>([]);
 
+    // Authentication Guard
+    useEffect(() => {
+        if (!isLoading && !token) {
+            router.push('/login');
+        }
+    }, [token, isLoading, router]);
+
     // Sync with URL ID
     useEffect(() => {
+        if (!token) return;
         const idFromUrl = Array.isArray(params.id) ? params.id[0] : params.id;
         if (idFromUrl && idFromUrl !== activeChatId) {
             handleUrlChange(idFromUrl);
@@ -26,11 +36,14 @@ export default function ChatPage() {
             setActiveChatId(null);
             setNavigationStack([]);
         }
-    }, [params.id]);
+    }, [params.id, token]);
 
     const handleUrlChange = async (id: string) => {
+        if (!token) return;
         try {
-            const response = await fetch(`http://localhost:3001/chats/${id}/ancestry`);
+            const response = await fetch(`http://localhost:3001/chats/${id}/ancestry`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (response.ok) {
                 const ancestry = await response.json();
                 setNavigationStack(ancestry);
@@ -42,15 +55,18 @@ export default function ChatPage() {
     };
 
     useEffect(() => {
-        if (isMapOpen) {
+        if (isMapOpen && token) {
             fetchMapLevels();
         }
-    }, [isMapOpen, navigationStack]);
+    }, [isMapOpen, navigationStack, token]);
 
     const fetchMapLevels = async () => {
+        if (!token) return;
         try {
             // Level 0: Roots
-            const rootsRes = await fetch("http://localhost:3001/chats");
+            const rootsRes = await fetch("http://localhost:3001/chats", {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (!rootsRes.ok) return;
             const rootsData = await rootsRes.json();
 
@@ -67,7 +83,9 @@ export default function ChatPage() {
             // For each node in stack, fetch its children to form the next column
             for (let i = 0; i < navigationStack.length; i++) {
                 const node = navigationStack[i];
-                const res = await fetch(`http://localhost:3001/chats/${node.id}/children`);
+                const res = await fetch(`http://localhost:3001/chats/${node.id}/children`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (res.ok) {
                     const childrenData = await res.json();
                     if (childrenData.length > 0) {
@@ -90,6 +108,14 @@ export default function ChatPage() {
             console.error("Error fetching map levels:", error);
         }
     };
+
+    if (isLoading || !token) {
+        return (
+            <div className="h-screen bg-background flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     const navigateTo = (id: string | null) => {
         if (id) {

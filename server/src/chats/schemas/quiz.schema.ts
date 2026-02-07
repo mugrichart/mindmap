@@ -8,6 +8,9 @@ export class Quiz {
     @Prop({ type: Types.ObjectId, ref: 'Chat', required: true })
     chatId: Types.ObjectId;
 
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+    userId: Types.ObjectId;
+
     @Prop({
         type: [{
             question: String,

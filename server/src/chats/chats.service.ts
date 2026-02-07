@@ -15,23 +15,23 @@ export class ChatsService {
         @InjectModel(Quiz.name) private readonly quizModel: Model<QuizDocument>,
     ) { }
 
-    async findAllRoot() {
-        return this.chatModel.find({ parentId: null }).sort({ updatedAt: -1 }).exec();
+    async findAllRoot(userId: string) {
+        return this.chatModel.find({ parentId: null, userId: new Types.ObjectId(userId) }).sort({ updatedAt: -1 }).exec();
     }
 
-    async findOne(id: string) {
-        const chat = await this.chatModel.findById(id).exec();
+    async findOne(id: string, userId: string) {
+        const chat = await this.chatModel.findOne({ _id: new Types.ObjectId(id), userId: new Types.ObjectId(userId) }).exec();
         if (!chat) throw new NotFoundException('Chat not found');
         return chat;
     }
 
-    async findChildren(parentId: string) {
-        return this.chatModel.find({ parentId: new Types.ObjectId(parentId) }).sort({ createdAt: 1 }).exec();
+    async findChildren(parentId: string, userId: string) {
+        return this.chatModel.find({ parentId: new Types.ObjectId(parentId), userId: new Types.ObjectId(userId) }).sort({ createdAt: 1 }).exec();
     }
 
-    async getAncestry(id: string) {
+    async getAncestry(id: string, userId: string) {
         const ancestry: any[] = [];
-        let current = await this.chatModel.findById(id).lean().exec();
+        let current = await this.chatModel.findOne({ _id: new Types.ObjectId(id), userId: new Types.ObjectId(userId) }).lean().exec();
 
         while (current) {
             ancestry.unshift({
@@ -40,7 +40,7 @@ export class ChatsService {
                 type: 'folder'
             });
             if (current.parentId) {
-                current = await this.chatModel.findById(current.parentId).lean().exec();
+                current = await this.chatModel.findOne({ _id: current.parentId, userId: new Types.ObjectId(userId) }).lean().exec();
             } else {
                 current = null;
             }
@@ -49,9 +49,9 @@ export class ChatsService {
         return ancestry;
     }
 
-    async sendMessage(dto: CreateChatMessageDto): Promise<string> {
+    async sendMessage(dto: CreateChatMessageDto, userId: string): Promise<string> {
         if (dto.chatId) {
-            const chat = await this.chatModel.findById(dto.chatId).exec();
+            const chat = await this.chatModel.findOne({ _id: new Types.ObjectId(dto.chatId), userId: new Types.ObjectId(userId) }).exec();
             if (chat) {
                 const messages: ChatMessage[] = chat.messages.map(m => ({
                     role: m.role as 'user' | 'assistant' | 'system',
@@ -84,7 +84,7 @@ export class ChatsService {
 
         let conversation: ChatMessage[] = [];
         if (dto.parentId) {
-            const parent = await this.chatModel.findById(dto.parentId).exec();
+            const parent = await this.chatModel.findOne({ _id: new Types.ObjectId(dto.parentId), userId: new Types.ObjectId(userId) }).exec();
             if (parent && parent.summary) {
                 conversation = [
                     {
@@ -103,6 +103,7 @@ export class ChatsService {
         const title = await this.generateTitle(dto.content);
         const newChat = new this.chatModel({
             title,
+            userId: new Types.ObjectId(userId),
             messages: [
                 { role: 'user', content: dto.content },
                 { role: 'assistant', content: response.content }
@@ -115,12 +116,12 @@ export class ChatsService {
         return response.content;
     }
 
-    async *getStream(dto: CreateChatMessageDto): AsyncIterable<any> {
+    async *getStream(dto: CreateChatMessageDto, userId: string): AsyncIterable<any> {
         let conversation: ChatMessage[] = [];
         let chat: ChatDocument | null = null;
 
         if (dto.chatId) {
-            chat = await this.chatModel.findById(dto.chatId).exec();
+            chat = await this.chatModel.findOne({ _id: new Types.ObjectId(dto.chatId), userId: new Types.ObjectId(userId) }).exec();
             if (chat) {
                 conversation = chat.messages.map(m => ({
                     role: m.role as 'user' | 'assistant' | 'system',
@@ -128,7 +129,7 @@ export class ChatsService {
                 }));
             }
         } else if (dto.parentId) {
-            const parent = await this.chatModel.findById(dto.parentId).exec();
+            const parent = await this.chatModel.findOne({ _id: new Types.ObjectId(dto.parentId), userId: new Types.ObjectId(userId) }).exec();
             if (parent && parent.summary) {
                 conversation = [
                     {
@@ -152,6 +153,7 @@ export class ChatsService {
             const title = await this.generateTitle(dto.content);
             const newChat = new this.chatModel({
                 title,
+                userId: new Types.ObjectId(userId),
                 messages: [
                     { role: 'user', content: dto.content },
                     { role: 'assistant', content: accumulatedResponse }
@@ -189,18 +191,19 @@ export class ChatsService {
     }
 
     // Quiz and Exam Methods
-    async getQuiz(chatId: string) {
-        const chat = await this.findOne(chatId);
+    async getQuiz(chatId: string, userId: string) {
+        const chat = await this.findOne(chatId, userId);
         const questions = await this.aiService.generateQuizQuestions(
             chat.messages.map(m => ({ role: m.role as any, content: m.content })),
             5
         );
 
         // Overwrite: remove any previous quiz attempts for this chat
-        await this.quizModel.deleteMany({ chatId: new Types.ObjectId(chatId), type: 'quiz' }).exec();
+        await this.quizModel.deleteMany({ chatId: new Types.ObjectId(chatId), userId: new Types.ObjectId(userId), type: 'quiz' }).exec();
 
         const quiz = new this.quizModel({
             chatId: new Types.ObjectId(chatId),
+            userId: new Types.ObjectId(userId),
             questions,
             maxScore: questions.length,
             type: 'quiz'
@@ -209,8 +212,8 @@ export class ChatsService {
         return quiz.save();
     }
 
-    async getExam(chatId: string) {
-        const rootChat = await this.findOne(chatId);
+    async getExam(chatId: string, userId: string) {
+        const rootChat = await this.findOne(chatId, userId);
         const allQuestions: any[] = [];
 
         const rootQuestions = await this.aiService.generateQuizQuestions(
@@ -219,7 +222,7 @@ export class ChatsService {
         );
         allQuestions.push(...rootQuestions);
 
-        const children = await this.findChildren(chatId);
+        const children = await this.findChildren(chatId, userId);
         for (const child of children) {
             const childQuestions = await this.collectQuestionsForExam(child);
             allQuestions.push(...childQuestions);
@@ -230,10 +233,11 @@ export class ChatsService {
         const selected = shuffled.slice(0, EXAM_CAP);
 
         // Overwrite: remove any previous exam attempts for this chat
-        await this.quizModel.deleteMany({ chatId: new Types.ObjectId(chatId), type: 'exam' }).exec();
+        await this.quizModel.deleteMany({ chatId: new Types.ObjectId(chatId), userId: new Types.ObjectId(userId), type: 'exam' }).exec();
 
         const exam = new this.quizModel({
             chatId: new Types.ObjectId(chatId),
+            userId: new Types.ObjectId(userId),
             questions: selected,
             maxScore: selected.length,
             type: 'exam'
@@ -249,8 +253,8 @@ export class ChatsService {
         );
     }
 
-    async submitQuiz(quizId: string, answers: number[]) {
-        const quiz = await this.quizModel.findById(quizId).exec();
+    async submitQuiz(quizId: string, answers: number[], userId: string) {
+        const quiz = await this.quizModel.findOne({ _id: new Types.ObjectId(quizId), userId: new Types.ObjectId(userId) }).exec();
         if (!quiz) throw new NotFoundException('Quiz not found');
 
         let score = 0;
@@ -265,7 +269,7 @@ export class ChatsService {
         quiz.completed = true;
         await quiz.save();
 
-        const chat = await this.chatModel.findById(quiz.chatId).exec();
+        const chat = await this.chatModel.findOne({ _id: quiz.chatId, userId: new Types.ObjectId(userId) }).exec();
         if (chat) {
             if (quiz.type === 'quiz') {
                 chat.bestQuizScore = score;

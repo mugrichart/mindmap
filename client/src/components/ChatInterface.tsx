@@ -10,6 +10,8 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import QuizModal from "@/components/QuizModal";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 const MODELS = [
     { id: "gpt-4o", name: "GPT-4o", provider: "OpenAI" },
     { id: "claude-3-5", name: "Claude 3.5 Sonnet", provider: "Anthropic" },
@@ -35,6 +37,7 @@ export default function ChatInterface({
     parentId,
     onChatCreated
 }: ChatInterfaceProps) {
+    const { token } = useAuth();
     const [selectedModel, setSelectedModel] = useState(MODELS[0]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -64,18 +67,21 @@ export default function ChatInterface({
     // Reset or fetch history when chatId changes
     useEffect(() => {
         setCurrentChatId(initialChatId || null);
-        if (initialChatId) {
+        if (initialChatId && token) {
             fetchChatHistory(initialChatId);
         } else {
             setMessages([]);
             setChatData(null);
         }
-    }, [initialChatId]);
+    }, [initialChatId, token]);
 
     const fetchChatHistory = async (id: string) => {
+        if (!token) return;
         setIsFetchingHistory(true);
         try {
-            const response = await fetch(`http://localhost:3001/chats/${id}`);
+            const response = await fetch(`http://localhost:3001/chats/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (response.ok) {
                 const data = await response.json();
                 setChatData(data);
@@ -104,7 +110,7 @@ export default function ChatInterface({
     };
 
     const handleSendMessage = async () => {
-        if (!inputValue.trim() || isLoading) return;
+        if (!inputValue.trim() || isLoading || !token) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -125,6 +131,7 @@ export default function ChatInterface({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     content: userMessage.content,
@@ -195,7 +202,7 @@ export default function ChatInterface({
     };
 
     const startTest = async (type: 'quiz' | 'exam') => {
-        if (!currentChatId) return;
+        if (!currentChatId || !token) return;
 
         const alreadyTaken = type === 'quiz' ? chatData?.quizTaken : chatData?.examTaken;
         if (alreadyTaken) {
@@ -204,7 +211,9 @@ export default function ChatInterface({
         }
 
         try {
-            const response = await fetch(`http://localhost:3001/chats/${currentChatId}/${type}`);
+            const response = await fetch(`http://localhost:3001/chats/${currentChatId}/${type}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (response.ok) {
                 const data = await response.json();
                 setActiveQuiz(data);
@@ -231,7 +240,7 @@ export default function ChatInterface({
                         <Menu size={20} />
                     </button>
 
-                    <span className="font-bold text-heading text-xl uppercase tracking-tighter ml-2 mr-4 select-none tracking-normal">MindMap</span>
+                    <span className="font-bold text-heading text-xl uppercase ml-2 mr-4 select-none tracking-normal">MindMap</span>
 
                     <div className="relative">
                         <button

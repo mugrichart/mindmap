@@ -29,6 +29,9 @@ export class Chat {
     @Prop({ type: Types.ObjectId, ref: 'Chat', default: null })
     parentId: Types.ObjectId | null;
 
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+    userId: Types.ObjectId;
+
     @Prop({ default: 'gpt-4o' })
     aiModel: string;
 }

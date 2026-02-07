@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, CheckCircle2, ChevronRight, Award } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Question {
     question: string;
@@ -19,6 +20,7 @@ interface QuizModalProps {
 }
 
 export default function QuizModal({ quizId, type, questions, onClose, onComplete }: QuizModalProps) {
+    const { token } = useAuth();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<number[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,11 +41,15 @@ export default function QuizModal({ quizId, type, questions, onClose, onComplete
     };
 
     const handleSubmit = async () => {
+        if (!token) return;
         setIsSubmitting(true);
         try {
             const response = await fetch(`http://localhost:3001/chats/quiz/${quizId}/submit`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ answers })
             });
             if (response.ok) {

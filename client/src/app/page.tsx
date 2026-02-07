@@ -1,4 +1,11 @@
+"use client";
+
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function Home() {
+  const { token, isLoading } = useAuth();
+
   return (
     <div className="relative min-h-screen bg-background font-sans text-foreground grid-bg">
       {/* Background Glow */}
@@ -10,24 +17,32 @@ export default function Home() {
       <main className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-6 pt-24 pb-32 sm:px-12 lg:pt-32">
         {/* Navigation */}
         <nav className="fixed top-6 left-1/2 flex w-[90%] max-w-4xl -translate-x-1/2 items-center justify-between rounded-full bg-card/60 px-6 py-3 backdrop-blur-xl border border-white/5 shadow-2xl">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
               <span className="text-black font-bold text-lg">M</span>
             </div>
             <span className="text-xl font-bold tracking-tight text-heading">Mind Map</span>
-          </div>
+          </Link>
           <div className="hidden gap-8 text-sm font-medium sm:flex">
             <a href="#features" className="text-foreground/80 hover:text-primary transition-colors">Features</a>
             <a href="#vision" className="text-foreground/80 hover:text-primary transition-colors">Methodology</a>
             <a href="#" className="text-foreground/80 hover:text-primary transition-colors">Documentation</a>
           </div>
           <div className="flex items-center gap-4">
-            <button className="hidden text-sm font-semibold text-foreground/80 hover:text-heading transition-colors sm:block">
-              Sign In
-            </button>
-            <button className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-black transition-all hover:scale-105 active:scale-95">
-              Get Started
-            </button>
+            {!isLoading && token ? (
+              <Link href="/chats" className="rounded-full bg-primary/10 border border-primary/20 px-5 py-2 text-sm font-bold text-primary transition-all hover:bg-primary/20 active:scale-95">
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/login?mode=login" className="hidden text-sm font-semibold text-foreground/80 hover:text-heading transition-colors sm:block">
+                  Sign In
+                </Link>
+                <Link href="/login?mode=signup" className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-black transition-all hover:scale-105 active:scale-95">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </nav>
 
@@ -51,10 +66,10 @@ export default function Home() {
           </p>
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row">
-            <button className="group relative flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-black transition-all hover:scale-105 active:scale-95">
-              Start Mapping
+            <Link href={!isLoading && token ? "/chats" : "/login?mode=signup"} className="group relative flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-black transition-all hover:scale-105 active:scale-95">
+              {!isLoading && token ? "Open your Map" : "Start Mapping"}
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            </button>
+            </Link>
             <button className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-4 text-lg font-bold text-heading backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/20 active:scale-95">
               Watch Demo
             </button>
@@ -161,9 +176,9 @@ export default function Home() {
             Join the private beta. Experience the future of intellectual structure.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4">
-            <button className="rounded-full bg-primary px-10 py-5 text-xl font-bold text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+            <Link href="/login?mode=signup" className="rounded-full bg-primary px-10 py-5 text-xl font-bold text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
               Get Started for Free
-            </button>
+            </Link>
             <p className="text-xs text-foreground/40 italic">No credit card required. Invite-only access.</p>
           </div>
         </section>
