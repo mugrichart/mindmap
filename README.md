@@ -8,11 +8,11 @@
 ## 🛠 How It Works
 Mind map employs a graph of chats allowing the user to jump through chats:
 
-### 1. 
+### 1. Folder structure for chats
 
-### 2. 
+### 2. quiz and exams to track you have mastered
 
-### 3. 
+### 3. a mind map of chats
 
 ## ✨ Features
 
@@ -53,4 +53,5 @@ client: pnpm run dev
 server: pnpm start:dev
 
 ## Roadmap
+
 - 
