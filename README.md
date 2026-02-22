@@ -10,7 +10,7 @@ Mind map employs a graph of chats allowing the user to jump through chats:
 
 ### 1. Folder structure for chats
 
-### 2. quiz and exams to track you have mastered
+### 2. quiz and exams to track what you have mastered
 
 ### 3. a mind map of chats
 
@@ -55,3 +55,4 @@ server: pnpm start:dev
 ## Roadmap
 
 - 
+
