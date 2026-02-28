@@ -79,7 +79,7 @@ export default function ChatInterface({
         if (!token) return;
         setIsFetchingHistory(true);
         try {
-            const response = await fetch(`http://localhost:3001/chats/${id}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -127,7 +127,7 @@ export default function ChatInterface({
         }
 
         try {
-            const response = await fetch("http://localhost:3001/chats/stream", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats/stream`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -211,7 +211,7 @@ export default function ChatInterface({
         }
 
         try {
-            const response = await fetch(`http://localhost:3001/chats/${currentChatId}/${type}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats/${currentChatId}/${type}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {

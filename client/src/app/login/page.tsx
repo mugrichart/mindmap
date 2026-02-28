@@ -23,7 +23,7 @@ function LoginForm() {
 
         try {
             const endpoint = isLogin ? '/auth/login' : '/auth/register';
-            const response = await fetch(`http://localhost:3001${endpoint}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, name: isLogin ? undefined : name }),

@@ -41,7 +41,7 @@ export default function ChatPage() {
     const handleUrlChange = async (id: string) => {
         if (!token) return;
         try {
-            const response = await fetch(`http://localhost:3001/chats/${id}/ancestry`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats/${id}/ancestry`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -64,7 +64,7 @@ export default function ChatPage() {
         if (!token) return;
         try {
             // Level 0: Roots
-            const rootsRes = await fetch("http://localhost:3001/chats", {
+            const rootsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!rootsRes.ok) return;
@@ -83,7 +83,7 @@ export default function ChatPage() {
             // For each node in stack, fetch its children to form the next column
             for (let i = 0; i < navigationStack.length; i++) {
                 const node = navigationStack[i];
-                const res = await fetch(`http://localhost:3001/chats/${node.id}/children`, {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats/${node.id}/children`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {

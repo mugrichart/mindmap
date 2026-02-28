@@ -39,8 +39,8 @@ export default function Sidebar({
         try {
             const lastNode = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1] : null;
             const url = lastNode
-                ? `http://localhost:3001/chats/${lastNode.id}/children`
-                : `http://localhost:3001/chats`;
+                ? `${process.env.NEXT_PUBLIC_API_URL}/chats/${lastNode.id}/children`
+                : `${process.env.NEXT_PUBLIC_API_URL}/chats`;
 
             const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }

@@ -44,7 +44,7 @@ export default function QuizModal({ quizId, type, questions, onClose, onComplete
         if (!token) return;
         setIsSubmitting(true);
         try {
-            const response = await fetch(`http://localhost:3001/chats/quiz/${quizId}/submit`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats/quiz/${quizId}/submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
