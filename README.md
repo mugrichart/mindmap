@@ -20,10 +20,10 @@ Mind map employs a graph of chats allowing the user to jump through chats:
 ## 🚀 Tech Stack
 
 ### Frontend
-Next.js (React), Tailwind CSS
+Next.js, Tailwind CSS
 
 ### Backend
-NestJS (Node.js framework)
+NestJS
 
 ### Language
 TypeScript
@@ -55,4 +55,5 @@ server: pnpm start:dev
 ## Roadmap
 
 - 
+
 
